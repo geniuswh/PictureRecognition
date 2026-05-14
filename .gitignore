@@ -2,11 +2,9 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
+dist/
 build/
 *.spec
-
-# dist中只保留压缩包
-dist/PictureRecognition/
 
 # IDE
 .vscode/
