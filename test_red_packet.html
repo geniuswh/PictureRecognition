@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红包测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5e6d0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: "Microsoft YaHei", sans-serif;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #c0392b;
+            margin-bottom: 30px;
+            font-size: 28px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .red-packet-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .red-packet {
+            width: 160px;
+            height: 220px;
+            background: linear-gradient(180deg, #e74c3c 0%, #c0392b 40%, #a93226 100%);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            cursor: default;
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+
+        .red-packet::before {
+            content: "";
+            position: absolute;
+            top: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .red-packet::after {
+            content: "¥";
+            position: absolute;
+            top: 40px;
+            font-size: 32px;
+            color: #c0392b;
+            font-weight: bold;
+        }
+
+        .red-packet .label {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .red-packet .label-text {
+            color: #f1c40f;
+            font-size: 26px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            cursor: pointer;
+            user-select: none;
+            padding: 5px 20px;
+            transition: transform 0.15s;
+        }
+
+        .red-packet .label-text:hover {
+            transform: scale(1.1);
+        }
+
+        .red-packet .label-text:active {
+            transform: scale(0.95);
+        }
+
+        /* 已抢完状态 */
+        .red-packet.grabbed {
+            background: linear-gradient(180deg, #95a5a6 0%, #7f8c8d 40%, #6c7a7a 100%);
+        }
+
+        .red-packet.grabbed::before {
+            background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+        }
+
+        .red-packet.grabbed::after {
+            color: #7f8c8d;
+        }
+
+        .red-packet.grabbed .label-text {
+            color: #ecf0f1;
+            cursor: default;
+            font-size: 18px;
+        }
+
+        .red-packet.grabbed .label-text:hover {
+            transform: none;
+        }
+
+        /* 弹出红包遮罩 */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        /* 弹出的红包 */
+        .popup-packet {
+            width: 220px;
+            height: 300px;
+            background: linear-gradient(180deg, #e74c3c 0%, #c0392b 40%, #a93226 100%);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.3s ease-out;
+            overflow: hidden;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            70% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .popup-packet::before {
+            content: "";
+            position: absolute;
+            top: 50px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+        }
+
+        .popup-packet::after {
+            content: "¥";
+            position: absolute;
+            top: 65px;
+            font-size: 44px;
+            color: #c0392b;
+            font-weight: bold;
+        }
+
+        .popup-packet .label {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0.15));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .popup-packet .label-text {
+            color: #f1c40f;
+            font-size: 30px;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+            cursor: pointer;
+            user-select: none;
+            padding: 5px 25px;
+            transition: transform 0.15s;
+        }
+
+        .popup-packet .label-text:hover {
+            transform: scale(1.1);
+        }
+
+        .popup-packet .label-text:active {
+            transform: scale(0.95);
+        }
+
+        .counter {
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        /* 打开动画 */
+        .popup-packet.opening {
+            animation: openPacket 0.15s ease-in forwards;
+        }
+
+        @keyframes openPacket {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.05); }
+            100% { transform: scale(0.8); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🧧 红包测试页面</h1>
+
+    <div class="red-packet-grid" id="packetGrid">
+        <!-- 6个红包由JS生成 -->
+    </div>
+
+    <div class="counter" id="counter">已抢: 0 / 6</div>
+
+    <!-- 弹出红包遮罩 -->
+    <div class="overlay" id="overlay">
+        <div class="popup-packet" id="popupPacket">
+            <div class="label">
+                <span class="label-text" id="openBtn">打开</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GRID_COUNT = 6;
+        let grabbedCount = 0;
+        let currentPacketIndex = -1;
+        let openClickCount = 0;
+
+        const grid = document.getElementById('packetGrid');
+        const overlay = document.getElementById('overlay');
+        const popupPacket = document.getElementById('popupPacket');
+        const openBtn = document.getElementById('openBtn');
+        const counter = document.getElementById('counter');
+
+        // 初始化红包
+        for (let i = 0; i < GRID_COUNT; i++) {
+            const packet = document.createElement('div');
+            packet.className = 'red-packet';
+            packet.dataset.index = i;
+            packet.innerHTML = '<div class="label"><span class="label-text">抢</span></div>';
+
+            const grabBtn = packet.querySelector('.label-text');
+            grabBtn.addEventListener('click', () => onGrab(i, packet));
+
+            grid.appendChild(packet);
+        }
+
+        function onGrab(index, packetEl) {
+            if (packetEl.classList.contains('grabbed')) return;
+            if (overlay.classList.contains('active')) return;
+
+            currentPacketIndex = index;
+            openClickCount = 0;
+            openBtn.textContent = '打开';
+            overlay.classList.add('active');
+            popupPacket.classList.remove('opening');
+
+            // 重置动画
+            popupPacket.style.animation = 'none';
+            popupPacket.offsetHeight; // 触发 reflow
+            popupPacket.style.animation = '';
+        }
+
+        openBtn.addEventListener('click', () => {
+            openClickCount++;
+
+            if (openClickCount === 1) {
+                openBtn.textContent = '打开';
+            }
+
+            if (openClickCount >= 2) {
+                // 打开动画
+                popupPacket.classList.add('opening');
+
+                setTimeout(() => {
+                    overlay.classList.remove('active');
+                    popupPacket.classList.remove('opening');
+
+                    // 标记原红包为已抢完
+                    const packets = document.querySelectorAll('.red-packet');
+                    packets[currentPacketIndex].classList.add('grabbed');
+                    const labelEl = packets[currentPacketIndex].querySelector('.label-text');
+                    labelEl.textContent = '已抢完';
+                    labelEl.style.fontSize = '18px';
+
+                    grabbedCount++;
+                    counter.textContent = `已抢: ${grabbedCount} / ${GRID_COUNT}`;
+                }, 150);
+            }
+        });
+
+        // 点击遮罩空白区域不关闭（强制点打开）
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                // 不做任何事，必须点打开
+            }
+        });
+    </script>
+</body>
+</html>
