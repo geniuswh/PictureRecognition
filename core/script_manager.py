@@ -12,8 +12,25 @@ import sys
 # 脚本存储目录：打包后在_internal下，开发时在项目根目录下
 if getattr(sys, 'frozen', False):
     SCRIPTS_DIR = os.path.join(os.path.dirname(sys.executable), '_internal', 'scripts')
+    BASE_DIR = os.path.join(os.path.dirname(sys.executable), '_internal')
 else:
     SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _to_relative(abs_path: str) -> str:
+    """将绝对路径转为相对于 BASE_DIR 的相对路径"""
+    try:
+        return os.path.relpath(abs_path, BASE_DIR).replace("\\", "/")
+    except ValueError:
+        return abs_path
+
+
+def _to_absolute(rel_path: str) -> str:
+    """将相对路径转为绝对路径；如果已经是绝对路径则直接返回"""
+    if os.path.isabs(rel_path):
+        return rel_path
+    return os.path.join(BASE_DIR, rel_path.replace("/", os.sep))
 
 
 @dataclass
@@ -28,10 +45,14 @@ class StepConfig:
     post_delay: float = 1.0       # 步骤执行后等待时间(秒)
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        d["image_path"] = _to_relative(self.image_path)
+        return d
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "StepConfig":
+        if "image_path" in data:
+            data["image_path"] = _to_absolute(data["image_path"])
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
 
 
